@@ -1,10 +1,16 @@
 package com.toures.balon.integration.transform;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.text.MessageFormat;
 import java.util.Calendar;
+import java.util.ResourceBundle;
 
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.TextMessage;
 
 import com.toures.balon.integration.producer.Producer;
 
@@ -16,6 +22,10 @@ public class TransforMessage {
 
 	private static final String EXTENSION = ".txt";
 
+	private static String RESOURCE_BUNDLE_APP = "com.toures.balon.integration.application";
+
+	private static ResourceBundle bundleApp = ResourceBundle.getBundle(RESOURCE_BUNDLE_APP);
+
 	public TransforMessage() {}
 
 	/**
@@ -23,13 +33,15 @@ public class TransforMessage {
 	 * @throws Exception
 	 */
 	private void proccessFile() throws Exception {
-		String fileName = getFileName();
-		String linea = null;
+		String fileName = getFileName(false);
+		String line = null;
 		FileReader fileReader = new FileReader(PATH.concat(fileName));
 		BufferedReader buffer = new BufferedReader(fileReader);
-		while((linea=buffer.readLine()) != null) {
-			String message = transforMessage(linea);
-			sendMessage(message);
+		while((line=buffer.readLine()) != null) {
+			String message = transforMessage(line);
+			if(message != null) {
+				sendMessage(message);
+			}
 		}
 		buffer.close();
 	}
@@ -38,10 +50,14 @@ public class TransforMessage {
 	 * Get consolid file name
 	 * @return
 	 */
-	private String getFileName() {
+	private String getFileName(boolean isFileError) {
 		String fileName = FILE;
 		Calendar c = Calendar.getInstance();
-		fileName = fileName.concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(EXTENSION);
+		if(isFileError) {
+			fileName = fileName.concat("Err-").concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(EXTENSION);
+		}else {
+			fileName = fileName.concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(EXTENSION);
+		}
 		return fileName;
 	}
 
@@ -52,19 +68,56 @@ public class TransforMessage {
 	 */
 	private String transforMessage (String message) {
 		String XML = null;
-		
-		return XML;
+		int initialPos=0, finalPos=0;
+		int length = Integer.parseInt(bundleApp.getString("message.length"));
+		int size = Integer.parseInt(bundleApp.getString("message.size"));
+		String arrayInfo[] = new String[size];
+		if(message.length() == length) {
+			System.out.println("Message: "+message);
+			//Info
+			for(int i = 0; i<size; i++) {
+				initialPos = Integer.parseInt(bundleApp.getString("message.part"+i+".initial"));
+				finalPos = Integer.parseInt(bundleApp.getString("message.part"+i+".final"));
+				arrayInfo[i] = message.substring(initialPos, finalPos);				
+			}
+			XML = MessageFormat.format(bundleApp.getString("message.xml"),arrayInfo);
+			System.out.println(XML);
+			return XML;	
+		}else {
+			try {
+				writeFileError(message);	
+			}catch(Exception e) {
+				System.out.println("ERROR: "+e.getMessage());
+			}			
+			System.out.println(XML);
+			return null;
+		}		
 	}
-	
+
 	/**
 	 * Send message to ActiveMQ
 	 * @param message
 	 * @throws JMSException
 	 */
 	private void sendMessage(String message) throws JMSException{
-		Producer.getInstance().sendMessages(message);
+		new Producer().sendMessages(message);
 	}
-	
+
+	/**
+	 * 
+	 * @param message
+	 * @throws JMSException
+	 * @throws Exception
+	 */
+	private void writeFileError(String line) throws Exception {
+		String fileName = getFileName(true);
+		//File archivo = new File(PATH.concat(fileName));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(PATH.concat(fileName), true));
+		bw.append(line);
+		bw.append("\n");
+		bw.close();            
+	}
+
 	/**
 	 * TEST
 	 * @param args

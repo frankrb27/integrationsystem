@@ -13,20 +13,10 @@ import org.apache.activemq.ActiveMQConnectionFactory;
  
 public class Producer {
 	
-	private static Producer instance = null;
- 
 	/**
 	 * Constructor
 	 */
-	private Producer () {}
-	
-	/**
-	 * Get instace Producer
-	 * @return
-	 */
-	public static Producer getInstance() {
-		return instance;
-	}	
+	public Producer () {}
 	
     private static final String URL = "tcp://localhost:61616";
  
