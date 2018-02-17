@@ -9,18 +9,10 @@ import java.util.Calendar;
 import java.util.ResourceBundle;
 
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.TextMessage;
 
 import com.toures.balon.integration.producer.Producer;
 
 public class TransforMessage {
-
-	private static final String PATH = "/home/frank/personal/javeriana/Semestre_II/Implementacion/proyecto/java-code/accountsystem/";
-
-	private static final String FILE = "consolid-account-";
-
-	private static final String EXTENSION = ".txt";
 
 	private static String RESOURCE_BUNDLE_APP = "com.toures.balon.integration.application";
 
@@ -35,7 +27,7 @@ public class TransforMessage {
 	private void proccessFile() throws Exception {
 		String fileName = getFileName(false);
 		String line = null;
-		FileReader fileReader = new FileReader(PATH.concat(fileName));
+		FileReader fileReader = new FileReader(bundleApp.getString("file.read").concat(fileName));
 		BufferedReader buffer = new BufferedReader(fileReader);
 		while((line=buffer.readLine()) != null) {
 			String message = transforMessage(line);
@@ -51,12 +43,13 @@ public class TransforMessage {
 	 * @return
 	 */
 	private String getFileName(boolean isFileError) {
-		String fileName = FILE;
+		String fileName = bundleApp.getString("file.name");
+		String extension = bundleApp.getString("file.extension");
 		Calendar c = Calendar.getInstance();
 		if(isFileError) {
-			fileName = fileName.concat("Err-").concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(EXTENSION);
+			fileName = fileName.concat("Err-").concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(extension);
 		}else {
-			fileName = fileName.concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(EXTENSION);
+			fileName = fileName.concat(""+c.get(Calendar.YEAR)).concat(""+c.get((Calendar.MONTH+1))).concat(""+c.get(Calendar.DAY_OF_MONTH)).concat(extension);
 		}
 		return fileName;
 	}
@@ -112,7 +105,7 @@ public class TransforMessage {
 	private void writeFileError(String line) throws Exception {
 		String fileName = getFileName(true);
 		//File archivo = new File(PATH.concat(fileName));
-		BufferedWriter bw = new BufferedWriter(new FileWriter(PATH.concat(fileName), true));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(bundleApp.getString("file.error").concat(fileName), true));
 		bw.append(line);
 		bw.append("\n");
 		bw.close();            
